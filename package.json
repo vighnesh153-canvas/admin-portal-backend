@@ -3,9 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "serve": "node ./bin/www",
-    "start": "cross-env MODE=PROD npm run serve",
-    "start:dev": "cross-env MODE=DEV DEBUG=admin-portal-backend:* npm run serve"
+    "start": "node ./bin/www",
+    "start:dev": "cross-env-shell MODE=DEV DEBUG=admin-portal-backend:* npm run start"
   },
   "dependencies": {
     "cookie-parser": "~1.4.4",
