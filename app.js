@@ -1,5 +1,3 @@
-require('dotenv').config()
-
 if (process.env.MODE === "DEV") {
     const path = require("path");
     require('dotenv').config({ path: path.join(__dirname, ".env") })
