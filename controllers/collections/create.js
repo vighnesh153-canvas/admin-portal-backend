@@ -1,22 +1,26 @@
-const mongoConnect = require('../../helpers/connect-db');
-const getJobDetails = require('../../helpers/extract-job-from-request');
+const absolutePath = require('../../helpers/absolute-path');
 
-const missingRequiredFieldsResponse = require('../../helpers/missing-required-fields-response');
+const mongoConnect = require(absolutePath('helpers/connect-db'));
+
+const missingRequiredFieldsResponse =
+    require(absolutePath('helpers/missing-required-fields-response'));
 
 module.exports = (req, res, next) => {
+    const { collectionName, extractor } = req;
+
     mongoConnect(async db => {
         let collection;
         try {
-            collection = await db.collection('experience');
+            collection = await db.collection(collectionName);
         } catch (e) {
             console.log(e);
             res.status(503).json({ message: "Couldn't retrieve the collection from DB." });
             return;
         }
 
-        let jobDetails;
+        let content;
         try {
-            jobDetails = getJobDetails(req);
+            content = extractor(req);
         } catch (e) {
             missingRequiredFieldsResponse(res)
             return;
@@ -24,7 +28,7 @@ module.exports = (req, res, next) => {
 
         let insertResponse;
         try {
-            insertResponse = await collection.insertOne(jobDetails);
+            insertResponse = await collection.insertOne(content);
         } catch (e) {
             console.log(e);
             res.status(503).json({ message: "Couldn't insert in the DB collection." });

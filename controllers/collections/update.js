@@ -1,27 +1,30 @@
+const absolutePath = require('../../helpers/absolute-path');
 const ObjectID = require('mongodb').ObjectID;
 
-const mongoConnect = require('../../helpers/connect-db');
-const getJobDetails = require('../../helpers/extract-job-from-request');
+const mongoConnect = require(absolutePath('helpers/connect-db'));
 
-const missingRequiredFieldsResponse = require('../../helpers/missing-required-fields-response');
+const missingRequiredFieldsResponse =
+    require(absolutePath('helpers/missing-required-fields-response'));
 
 module.exports = (req, res, next) => {
+    const { collectionName, extractor } = req;
+
     mongoConnect(async db => {
         let collection;
         try {
-            collection = await db.collection('experience');
+            collection = await db.collection(collectionName);
         } catch (e) {
             console.log(e);
             res.status(503).json({ message: "Couldn't retrieve the collection from DB." });
             return;
         }
 
-        let jobDetails;
-        let jobId;
+        let content;
+        let contentId;
         try {
-            jobDetails = getJobDetails(req);
-            jobId = req.body._id;
-            if (!jobId) {
+            content = extractor(req);
+            contentId = req.body._id;
+            if (!contentId) {
                 missingRequiredFieldsResponse(res, 'Id not provided.');
                 return;
             }
@@ -31,8 +34,8 @@ module.exports = (req, res, next) => {
         }
 
         try {
-            await collection.updateOne({ _id: new ObjectID(jobId) }, {
-                $set: jobDetails
+            await collection.updateOne({ _id: new ObjectID(contentId) }, {
+                $set: content
             });
         } catch (e) {
             res.status(503).json({ message: "Update failed to apply." });
