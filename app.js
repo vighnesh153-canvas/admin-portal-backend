@@ -1,13 +1,10 @@
-if (process.env.MODE === "DEV") {
-    const path = require("path");
-    require('dotenv').config({ path: path.join(__dirname, ".env") })
-}
+const path = require("path");
+require('dotenv').config({ path: path.join(__dirname, ".env") })
 
 const { setRootPath } = require('./helpers/absolute-path');
 setRootPath(__dirname);
 
 const express = require('express');
-const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const cors = require('cors');
