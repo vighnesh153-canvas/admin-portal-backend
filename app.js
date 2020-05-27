@@ -10,12 +10,17 @@ const express = require('express');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
+const cors = require('cors');
+const helmet = require('helmet');
 
 const indexRouter = require('./routes/index');
 const collectionsRouter = require('./routes/collections');
 const collectionsConfig = require('./controllers/collections/config');
 
 const app = express();
+
+app.use(helmet());
+app.use(cors());
 
 app.use(logger('dev'));
 app.use(express.json());
