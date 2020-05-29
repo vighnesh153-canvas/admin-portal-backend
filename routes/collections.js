@@ -13,6 +13,6 @@ router.get('/', rootRoute);
 router.get('/get', getAllRoute);
 router.post('/create', isAuth, createNewRoute);
 router.put('/update', isAuth, updateExistingRoute);
-router.delete('/remove', isAuth, removeExistingRoute);
+router.post('/remove', isAuth, removeExistingRoute);
 
 module.exports = router;
