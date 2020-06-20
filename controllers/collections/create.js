@@ -1,44 +1,48 @@
+const nodeFetch = require('node-fetch');
 const absolutePath = require('../../helpers/absolute-path');
-
-const mongoConnect = require(absolutePath('helpers/connect-db'));
 
 const missingRequiredFieldsResponse =
     require(absolutePath('helpers/missing-required-fields-response'));
+const updateGist = require(absolutePath('helpers/update-gist'));
 
-module.exports = (req, res, next) => {
-    const { collectionName, extractor } = req;
+module.exports = async (req, res, next) => {
+    const { gistFileName, gistDataFetchUrl, extractor } = req;
 
-    mongoConnect(async db => {
-        let collection;
-        try {
-            collection = await db.collection(collectionName);
-        } catch (e) {
-            console.log(e);
-            res.status(503).json({ message: "Couldn't retrieve the collection from DB." });
-            return;
-        }
+    let collection;
+    try {
+        const response = await nodeFetch(gistDataFetchUrl);
+        collection = await response.json();
+    } catch(error) {
+        res.status(500).json({ message: "Couldn't retrieve the collection." });
+        return
+    }
 
-        let content;
-        try {
-            content = extractor(req);
-        } catch (e) {
-            missingRequiredFieldsResponse(res)
-            return;
-        }
+    if (collection.hasOwnProperty('data') === false) {
+        collection.data = [];
+    }
 
-        let insertResponse;
-        try {
-            insertResponse = await collection.insertOne(content);
-        } catch (e) {
-            console.log(e);
-            res.status(503).json({ message: "Couldn't insert in the DB collection." });
-            return;
-        }
+    let content;
+    try {
+        content = extractor(req);
+    } catch (e) {
+        missingRequiredFieldsResponse(res)
+        return;
+    }
 
-        res.status(200).json({
-            message: 'SUCCESS',
-            documentId: insertResponse.insertedId,
-            insertedAt: new Date()
-        });
+    collection.data.push(content);
+
+    let updateFileResponse;
+    try {
+        updateFileResponse = await updateGist(gistFileName, collection);
+    } catch (e) {
+        console.log(e);
+        res.status(503).json({ message: "Couldn't insert in the gist." });
+        return;
+    }
+
+    res.status(200).json({
+        message: 'SUCCESS',
+        documentId: updateFileResponse.id,
+        insertedAt: new Date()
     });
 };

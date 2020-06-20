@@ -26,7 +26,11 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
-app.use('/experience', collectionsConfig('experience'), collectionsRouter);
-app.use('/projects', collectionsConfig('projects'), collectionsRouter);
+app.use('/experience',
+    collectionsConfig('experience.json'),
+    collectionsRouter);
+app.use('/projects',
+    collectionsConfig('projects.json'),
+    collectionsRouter);
 
 module.exports = app;
