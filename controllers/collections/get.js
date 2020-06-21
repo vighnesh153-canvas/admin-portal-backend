@@ -1,31 +1,16 @@
-const absolutePath = require('../../helpers/absolute-path');
+const nodeFetch = require('node-fetch');
 
-const mongoConnect = require(absolutePath('helpers/connect-db'));
+module.exports = async (req, res) => {
+    const { gistDataFetchUrl } = req;
 
-module.exports = (req, res, next) => {
-    const { collectionName } = req;
+    let collection;
+    try {
+        const response = await nodeFetch(gistDataFetchUrl);
+        collection = await response.json();
+    } catch(error) {
+        res.status(500).json({ message: "Couldn't retrieve the collection." });
+        return
+    }
 
-    mongoConnect(async db => {
-        let collection;
-        try {
-            collection = await db.collection(collectionName);
-        } catch (e) {
-            console.log(e);
-            res.status(503).json({ message: "Couldn't retrieve the collection from DB." });
-            return;
-        }
-
-        let content;
-        try {
-            content = await collection.find().toArray();
-        } catch (e) {
-            console.log(e);
-            res.status(503).json({
-                message: `Error occurred while retrieving content of '${collectionName}' collection.`
-            });
-            return;
-        }
-
-        res.status(200).json({ content });
-    });
+    res.status(200).json({ content: collection.data });
 };

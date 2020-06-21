@@ -1,50 +1,57 @@
+const nodeFetch = require('node-fetch');
 const absolutePath = require('../../helpers/absolute-path');
-const ObjectID = require('mongodb').ObjectID;
-
-const mongoConnect = require(absolutePath('helpers/connect-db'));
 
 const missingRequiredFieldsResponse =
     require(absolutePath('helpers/missing-required-fields-response'));
+const updateGist = require(absolutePath('helpers/update-gist'));
 
-module.exports = (req, res, next) => {
-    const { collectionName, extractor } = req;
+module.exports = async (req, res) => {
+    const { gistFileName, gistDataFetchUrl, extractor } = req;
 
-    mongoConnect(async db => {
-        let collection;
-        try {
-            collection = await db.collection(collectionName);
-        } catch (e) {
-            console.log(e);
-            res.status(503).json({ message: "Couldn't retrieve the collection from DB." });
+    let collection;
+    try {
+        const response = await nodeFetch(gistDataFetchUrl);
+        collection = await response.json();
+    } catch(error) {
+        res.status(500).json({ message: "Couldn't retrieve the collection." });
+        return
+    }
+
+    if (collection.hasOwnProperty('data') === false) {
+        collection.data = [];
+    }
+
+    let content;
+    let contentId;
+    try {
+        content = extractor(req);
+        contentId = req.body._id;
+        if (!contentId) {
+            missingRequiredFieldsResponse(res, 'Id not provided.');
             return;
         }
+    } catch (e) {
+        missingRequiredFieldsResponse(res)
+        return;
+    }
 
-        let content;
-        let contentId;
-        try {
-            content = extractor(req);
-            contentId = req.body._id;
-            if (!contentId) {
-                missingRequiredFieldsResponse(res, 'Id not provided.');
-                return;
-            }
-        } catch (e) {
-            missingRequiredFieldsResponse(res);
-            return;
+    for (let i = 0; i < collection.data.length; i++) {
+        if (collection.data[i]._id === contentId) {
+            collection.data[i] = content;
+            collection.data[i]._id = contentId;
+            break;
         }
+    }
 
-        try {
-            await collection.updateOne({ _id: new ObjectID(contentId) }, {
-                $set: content
-            });
-        } catch (e) {
-            res.status(503).json({ message: "Update failed to apply." });
-            return;
-        }
+    try {
+        await updateGist(gistFileName, collection);
+    } catch (e) {
+        res.status(503).json({ message: "Update failed to apply." });
+        return;
+    }
 
-        res.status(200).json({
-            message: 'SUCCESS',
-            updatedAt: new Date()
-        });
+    res.status(200).json({
+        message: 'SUCCESS',
+        updatedAt: new Date()
     });
 };

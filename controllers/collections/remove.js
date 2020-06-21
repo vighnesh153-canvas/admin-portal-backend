@@ -1,10 +1,10 @@
+const nodeFetch = require('node-fetch');
+
 const absolutePath = require('../../helpers/absolute-path');
+const updateGist = require(absolutePath('helpers/update-gist'));
 
-const mongoConnect = require(absolutePath('helpers/connect-db'));
-const ObjectID = require('mongodb').ObjectID;
-
-module.exports = (req, res, next) => {
-    const { collectionName } = req;
+module.exports = async (req, res) => {
+    const { gistDataFetchUrl, gistFileName } = req;
     const { entryId } = req.body;
 
     if (entryId === undefined) {
@@ -12,31 +12,25 @@ module.exports = (req, res, next) => {
         return;
     }
 
-    const objectId = new ObjectID(entryId);
+    let collection;
+    try {
+        const response = await nodeFetch(gistDataFetchUrl);
+        collection = await response.json();
+    } catch(error) {
+        res.status(500).json({ message: "Couldn't retrieve the collection." });
+        return
+    }
 
-    mongoConnect(async db => {
-        let collection;
-        try {
-            collection = await db.collection(collectionName);
-        } catch (e) {
-            console.log(e);
-            res.status(503).json({ message: "Couldn't retrieve the collection from DB." });
-            return;
-        }
+    collection.data = collection.data.filter(item => item._id !== entryId);
+    try {
+        await updateGist(gistFileName, collection);
+    } catch (e) {
+        res.status(503).json({ message: "Update failed to apply." });
+        return;
+    }
 
-        try {
-            await collection.deleteOne({ _id: objectId });
-        } catch (e) {
-            console.log(e);
-            res.status(503).json({
-                message: `Error occurred while deleting entry from '${collectionName}' collection.`
-            });
-            return;
-        }
-
-        res.status(200).json({
-            message: 'SUCCESS',
-            deletedAt: new Date()
-        });
+    res.status(200).json({
+        message: 'SUCCESS',
+        deletedAt: new Date()
     });
 };

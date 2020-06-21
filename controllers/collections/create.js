@@ -5,7 +5,7 @@ const missingRequiredFieldsResponse =
     require(absolutePath('helpers/missing-required-fields-response'));
 const updateGist = require(absolutePath('helpers/update-gist'));
 
-module.exports = async (req, res, next) => {
+module.exports = async (req, res) => {
     const { gistFileName, gistDataFetchUrl, extractor } = req;
 
     let collection;
@@ -29,6 +29,7 @@ module.exports = async (req, res, next) => {
         return;
     }
 
+    content._id = Date.now().toString(10);
     collection.data.push(content);
 
     let updateFileResponse;
