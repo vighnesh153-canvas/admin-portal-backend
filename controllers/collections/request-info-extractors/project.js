@@ -1,6 +1,8 @@
 const getJobDetails = request => {
-    const { title, routeLink, clientId, isLinkAbsolute, description, items } = request.body;
+    const { title, rank, routeLink, clientId, isLinkAbsolute, description, items } =
+        request.body;
     if (title === undefined ||
+        rank === undefined ||
         routeLink === undefined ||
         clientId === undefined ||
         description === undefined ||
@@ -8,7 +10,7 @@ const getJobDetails = request => {
         isLinkAbsolute === undefined) {
         throw new Error('Missing project information.');
     }
-    return { title, routeLink, clientId, isLinkAbsolute, description, items };
+    return { title, rank, routeLink, clientId, isLinkAbsolute, description, items };
 };
 
 module.exports = getJobDetails;

@@ -30,7 +30,7 @@ module.exports = async (req, res) => {
     }
 
     content._id = Date.now().toString(10);
-    collection.data.push(content);
+    collection.data.splice(content.rank, 0, content);
 
     let updateFileResponse;
     try {

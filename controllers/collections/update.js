@@ -39,6 +39,10 @@ module.exports = async (req, res) => {
         if (collection.data[i]._id === contentId) {
             collection.data[i] = content;
             collection.data[i]._id = contentId;
+            collection.data.splice(i, 1);
+            const rank = Math.min(content.rank, collection.data.length);
+            collection.data.splice(rank, 0, content);
+            content._id = contentId
             break;
         }
     }
